@@ -34,6 +34,20 @@ class ApigwHttpApiLambdaDynamodbPythonCdkStack(Stack):
             ],
         )
         
+        # Create log group for VPC Flow Logs
+        flow_log_group = logs_.LogGroup(
+            self,
+            "VpcFlowLogGroup",
+            retention=logs_.RetentionDays.ONE_MONTH,
+        )
+
+        # Enable VPC Flow Logs
+        vpc.add_flow_log(
+            "FlowLog",
+            destination=ec2.FlowLogDestination.to_cloud_watch_logs(flow_log_group),
+            traffic_type=ec2.FlowLogTrafficType.ALL,
+        )
+        
         # Create VPC endpoint
         dynamo_db_endpoint = ec2.GatewayVpcEndpoint(
             self,
@@ -84,6 +98,7 @@ class ApigwHttpApiLambdaDynamodbPythonCdkStack(Stack):
             memory_size=1024,
             timeout=Duration.minutes(5),
             log_retention=logs_.RetentionDays.ONE_YEAR,
+            tracing=lambda_.Tracing.ACTIVE,
         )
 
         # grant permission to lambda to write to demo table
@@ -116,5 +131,6 @@ class ApigwHttpApiLambdaDynamodbPythonCdkStack(Stack):
                     status=True,
                     user=True,
                 ),
+                tracing_enabled=True,
             ),
         )
