@@ -85,6 +85,45 @@ You should get below response
 {"message": "Successfully inserted data!"}
 ```
 
+## Security Logging Requirements
+
+### CloudWatch Logs
+This stack configures the following CloudWatch Logs with 1-year retention:
+- **Lambda Function Logs**: Captures application logs with structured JSON format including request context, operations, and errors
+- **API Gateway Access Logs**: Captures API request details including caller identity, source IP, HTTP method, and response status
+
+### CloudTrail Data Events
+For comprehensive security auditing, configure CloudTrail data events at the account/organization level:
+
+1. **DynamoDB Data Events**: Enable logging for all DynamoDB tables or specifically for the `demo_table` to track data access and modifications
+2. **Lambda Data Events**: Enable logging for Lambda function invocations to audit execution patterns
+
+Configure via:
+- AWS Console → CloudTrail → Trails → Data events
+- AWS Organizations CloudTrail for multi-account setup
+- AWS CLI: `aws cloudtrail put-event-selectors`
+
+### Point-in-Time Recovery
+The DynamoDB table has Point-in-Time Recovery (PITR) enabled, providing:
+- Continuous backups for up to 35 days
+- Audit trail for data changes
+- Protection against accidental data deletion or corruption
+
+### Log Analysis
+Use CloudWatch Logs Insights to query structured logs:
+
+```
+# Find all requests from a specific IP
+fields @timestamp, source_ip, request_id
+| filter event = "request_received" and source_ip = "x.x.x.x"
+| sort @timestamp desc
+
+# Find all errors
+fields @timestamp, error_type, error_message, request_id
+| filter event = "error"
+| sort @timestamp desc
+```
+
 ## Cleanup 
 Run below script to delete AWS resources created by this sample stack.
 ```
